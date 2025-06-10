@@ -1,4 +1,0 @@
-vertex: terrain
-control: terrain
-evaluation: terrain
-fragment: solid_color

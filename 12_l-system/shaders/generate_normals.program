@@ -1,3 +1,0 @@
-vertex: generate_normals
-geometry: generate_normals
-fragment: solid_color
