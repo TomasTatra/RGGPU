@@ -95,6 +95,21 @@ int main() {
 
 			renderer.clear();
 			renderer.geometryPass(scenes[config.currentSceneIdx], camera, RenderOptions{"solid"});
+
+			glUseProgram(compositingProgram);
+			//glUniform1f(glGetUniformLocation(compositingProgram, "focus_distance"), 0.5f);
+			//glUniform1f(glGetUniformLocation(compositingProgram, "focus_range"), 0.2f);
+
+			//glUniform1i(glGetUniformLocation(compositingProgram, "color_texture"), 0);
+			//glUniform1i(glGetUniformLocation(compositingProgram, "depth_texture"), 1);
+
+			//glActiveTexture(GL_TEXTURE0);
+			//glBindTexture(GL_TEXTURE_2D, colorTexture);  // final scene
+
+			//glActiveTexture(GL_TEXTURE1);
+			//glBindTexture(GL_TEXTURE_2D, depthTexture);  // G-buffer depth
+
+
 			renderer.compositingPass(light);
 		});
 	} catch (ShaderCompilationError &exc) {
