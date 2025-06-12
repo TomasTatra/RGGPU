@@ -15,6 +15,9 @@ public:
 		: mQuad(generateQuadTex())
 	{}
 
+	GLuint getColorTexture() const { return gBuffer.colorTex; }
+	GLuint getDepthTexture() const { return gBuffer.depthTex; }
+
 	void render(const OGLShaderProgram &aShaderProgram, MaterialParameterValues &aParameters) const {
 		aShaderProgram.use();
 		aShaderProgram.setMaterialParameters(aParameters, MaterialParameterValues());

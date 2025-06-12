@@ -33,6 +33,35 @@ struct Config {
 	bool useZOffset = false;
 };
 
+GLuint dofProgram = 0;
+
+class FullscreenQuad {
+	GLuint VAO;
+	FullscreenQuad() {
+		float quadVerts[] = {
+			-1.0f, -1.0f, 0.0f, 0.0f,
+			 3.0f, -1.0f, 2.0f, 0.0f,
+			-1.0f,  3.0f, 0.0f, 2.0f,
+		};
+		glGenVertexArrays(1, &VAO);
+		GLuint VBO;
+		glGenBuffers(1, &VBO);
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerts), quadVerts, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	}
+	void draw() {
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+	}
+};
+
+FullscreenQuad fullscreenQuad;
+
 int main() {
 	// Initialize GLFW
 	if (!glfwInit()) {
@@ -87,6 +116,16 @@ int main() {
 				renderer.initialize(width, height);
 			});
 
+		dofProgram = createProgramFromFile(
+			"shaders/passthrough.vertex.glsl",
+			"shaders/compositing.fragment.glsl"
+		);
+		if (!checkProgramLinkStatus(dofProgram)) {
+			std::cerr << "Failed to link DoF shader program\n";
+		}
+
+		GLuint colorTexture = renderer.getColorTexture();
+		GLuint depthTexture = renderer.getDepthTexture();
 
 		renderer.initialize(window.size()[0], window.size()[1]);
 		window.runLoop([&] {
@@ -96,21 +135,18 @@ int main() {
 			renderer.clear();
 			renderer.geometryPass(scenes[config.currentSceneIdx], camera, RenderOptions{"solid"});
 
-			glUseProgram(compositingProgram);
-			//glUniform1f(glGetUniformLocation(compositingProgram, "focus_distance"), 0.5f);
-			//glUniform1f(glGetUniformLocation(compositingProgram, "focus_range"), 0.2f);
+			glUseProgram(dofProgram);
+			glUniform1f(glGetUniformLocation(dofProgram, "focus_distance"), 0.5f);
+			glUniform1f(glGetUniformLocation(dofProgram, "focus_range"), 0.2f);
+			glUniform1i(glGetUniformLocation(dofProgram, "color_texture"), 0);
+			glUniform1i(glGetUniformLocation(dofProgram, "depth_texture"), 1);
 
-			//glUniform1i(glGetUniformLocation(compositingProgram, "color_texture"), 0);
-			//glUniform1i(glGetUniformLocation(compositingProgram, "depth_texture"), 1);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, colorTexture);
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, depthTexture);
 
-			//glActiveTexture(GL_TEXTURE0);
-			//glBindTexture(GL_TEXTURE_2D, colorTexture);  // final scene
-
-			//glActiveTexture(GL_TEXTURE1);
-			//glBindTexture(GL_TEXTURE_2D, depthTexture);  // G-buffer depth
-
-
-			renderer.compositingPass(light);
+			fullscreenQuad.draw();
 		});
 	} catch (ShaderCompilationError &exc) {
 		std::cerr
