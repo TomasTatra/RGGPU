@@ -15,9 +15,6 @@ public:
 		: mQuad(generateQuadTex())
 	{}
 
-	GLuint getColorTexture() const { return gBuffer.colorTex; }
-	GLuint getDepthTexture() const { return gBuffer.depthTex; }
-
 	void render(const OGLShaderProgram &aShaderProgram, MaterialParameterValues &aParameters) const {
 		aShaderProgram.use();
 		aShaderProgram.setMaterialParameters(aParameters, MaterialParameterValues());
@@ -51,7 +48,7 @@ public:
 		: mMaterialFactory(aMaterialFactory)
 	{
 		mCompositingShader = std::static_pointer_cast<OGLShaderProgram>(
-				mMaterialFactory.getShaderProgram("compositing"));
+				mMaterialFactory.getShaderProgram("deferred_lighting"));
 		// mShadowMapShader = std::static_pointer_cast<OGLShaderProgram>(
 		// 	mMaterialFactory.getShaderProgram("solid_color"));
 		mShadowMapShader = std::static_pointer_cast<OGLShaderProgram>(
@@ -131,6 +128,15 @@ public:
 		mCompositingParameters["u_lightMat"] = aLight.getViewMatrix();
 		mCompositingParameters["u_lightProjMat"] = aLight.getProjectionMatrix();
 		mQuadRenderer.render(*mCompositingShader, mCompositingParameters);
+	}
+
+	// Methods to access textures for DoF
+	GLuint getColorTexture() const {
+		return mFramebuffer->getColorAttachment(0)->texture.get();
+	}
+	
+	GLuint getDepthTexture() const {
+		return mFramebuffer->getDepthTexture()->texture.get();
 	}
 
 	template<typename TScene, typename TLight>

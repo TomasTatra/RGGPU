@@ -1,0 +1,2 @@
+vertex: passthrough
+fragment: deferred_lighting

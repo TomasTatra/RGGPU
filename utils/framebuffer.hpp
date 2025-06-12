@@ -46,7 +46,10 @@ public:
 					mColorAttachmentDescriptions[i].type);
 			mColorAttachments[i] = std::make_shared<OGLTexture>(std::move(texture));
 		}
-		mDepthBuffer = createDepthAndStencilBuffers(mWidth, mHeight);
+		
+		// Create depth texture instead of renderbuffer for DoF
+		mDepthTexture = std::make_shared<OGLTexture>(createDepthTexture(mWidth, mHeight));
+		
 		checkStatus();
 		unbind();
 	}
@@ -75,7 +78,15 @@ public:
 		GL_CHECK(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, aWidth, aHeight));
 		GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo.get()));
 		return rbo;
+	}
 
+	OpenGLResource createDepthTexture(int aWidth, int aHeight) {
+		auto textureID = createColorTexture(aWidth, aHeight, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT);
+		
+		// Attach the depth texture to the framebuffer
+		GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, textureID.get(), 0));
+		
+		return textureID;
 	}
 
 	void setDrawBuffers() {
@@ -100,10 +111,15 @@ public:
 		return mColorAttachments[aIdx];
 	}
 
+	std::shared_ptr<OGLTexture> getDepthTexture() {
+		return mDepthTexture;
+	}
+
 	int mWidth;
 	int mHeight;
 	OpenGLResource mFramebuffer;
 	std::vector<CADescription> mColorAttachmentDescriptions;
 	std::vector<std::shared_ptr<OGLTexture>> mColorAttachments;
 	OpenGLResource mDepthBuffer;
+	std::shared_ptr<OGLTexture> mDepthTexture;
 };
